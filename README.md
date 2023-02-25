@@ -27,6 +27,10 @@ A cross validation is performed to estimate the model's error.
 ### Optimize the WHRS
 A Bayesian optimization procedure is used in this stage to carry out the optimizations.
 
+For all optimization batchs the best WHRS state for a load interval is obtained. The load interval vary from 60% to 100%.
+
 The first optimization batch consists on optimize each output variable (L,E,C) independently. The results show that the WHRS's state that maximizes a varaible does not maximizes the other two.
 
-The
+The second optimization batch optimizes the rank model that combines L, E and C in the way that experts indicate with their preferences.
+
+The third optimization batch optimizes the rank model when vary the C's influence in the experts' decision.
