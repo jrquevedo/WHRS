@@ -20,11 +20,14 @@ A selection of the doubt pairs were shown to the experts. Their preferences were
 
 ### Learn a ranking
 To execute this stage execute `learnRanking.py`.
+
 From the `UserOrderedPairs*.csv` and the same number pairs from `PreOrderedPairs*.csv` a data set id generated.
 A linear SVM is used to implement a ranking learing procedure that generates a linear model that will be stored in `rankModel*.csv`.
 A cross validation is performed to estimate the model's error.
 
 ### Optimize the WHRS
+To execute this stage execute `optimizeModel.py`.
+
 A Bayesian optimization procedure is used in this stage to carry out the optimizations.
 
 For all optimization batchs the best WHRS state for a load interval is obtained. The load interval vary from 60% to 100%.
