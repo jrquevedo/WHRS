@@ -130,7 +130,7 @@ class WHRS():
             print('Guardado en {} {} entradas de PropSI'
                   .format(self.filePropSI,len(self.dictPropSI)))
 
-    def _py_CoolProp_CoolProp_PropsSI(self,P1,P2,P3=None,P4=None,P5=None,P6=None):#('P','T',T_cond_ORC,'Q',1,"Cyclohexane") 
+    def _py_CoolProp_CoolProp_PropsSI(self,P1,P2,P3=None,P4=None,P5=None,P6=None):#('P','T',T_cond_ORC,'Q',1,fluid) 
         Tup=(P1,P2,P3,P4,P5,P6)
         if Tup in self.dictPropSI:
             v=self.dictPropSI[Tup]
@@ -205,6 +205,10 @@ class WHRS():
     def __call__(self,Load,JW_pump,
                       RC_Superheat,RC_Subcool,
                       ORC_Superheat,ORC_Subcool,ORC_Pump,P_chamber):
+        
+        # fluid="Cyclohexane"
+        fluid="R1233zdE" # R1233zd(E)
+        
         self._loadPropSI() # Load stored calls to PropSI
         # 0. INPUT DATA
         
@@ -451,15 +455,15 @@ class WHRS():
         T_evap_jw_ORC_in = T_D2 # Jacket water temperature at the inlet of ORC evaporator, K
         T_evap_jw_ORC_out = 55 + 273.15 # Jacket water temperature at the outlet of the ORC evaporator, K
         T_cond_ORC = T_sw_in + 5 # Estimated temperature of condensation for the ORC, K - OPERATIONAL CONDITION
-        P_cond_ORC = self._py_CoolProp_CoolProp_PropsSI('P','T',T_cond_ORC,'Q',1,"Cyclohexane") # Condensation pressure of ORC at the estimated T_cond_ORC, Pa
-        Cp_ORC = self._py_CoolProp_CoolProp_PropsSI('Cpmass','T',T_cond_ORC,'Q',0,"Cyclohexane")/1000 # Cp of ORC fluid, kJ/kg·K
+        P_cond_ORC = self._py_CoolProp_CoolProp_PropsSI('P','T',T_cond_ORC,'Q',1,fluid) # Condensation pressure of ORC at the estimated T_cond_ORC, Pa
+        Cp_ORC = self._py_CoolProp_CoolProp_PropsSI('Cpmass','T',T_cond_ORC,'Q',0,fluid)/1000 # Cp of ORC fluid, kJ/kg·K
         Q_evap_jw_ORC = m_jw_ORC * Cp_jw * (T_evap_jw_ORC_in - T_evap_jw_ORC_out) # Available heat for ORC on jacket water, kJ/s
         # ORC Condenser outlet (Subcooled liquid before pump, 1)
         T_ORC1 = T_cond_ORC - ORC_Subcool # Temperature at state 1 of ORC, K
         P_ORC1 = P_cond_ORC # Pressure at state 1 of ORC, Pa
-        H_ORC1 = self._py_CoolProp_CoolProp_PropsSI('H','T',T_ORC1,'P',P_ORC1,"Cyclohexane")/1000 # kJ/kg
-        S_ORC1 = self._py_CoolProp_CoolProp_PropsSI('S','T',T_ORC1,'P',P_ORC1,"Cyclohexane")/1000 # kJ/kg·K
-        D_ORC1 = self._py_CoolProp_CoolProp_PropsSI('D','T',T_ORC1,'P',P_ORC1,"Cyclohexane") # kg/m3
+        H_ORC1 = self._py_CoolProp_CoolProp_PropsSI('H','T',T_ORC1,'P',P_ORC1,fluid)/1000 # kJ/kg
+        S_ORC1 = self._py_CoolProp_CoolProp_PropsSI('S','T',T_ORC1,'P',P_ORC1,fluid)/1000 # kJ/kg·K
+        D_ORC1 = self._py_CoolProp_CoolProp_PropsSI('D','T',T_ORC1,'P',P_ORC1,fluid) # kg/m3
         SpecVol_ORC1 = 1/D_ORC1 # m3/kg
         # ORC Pump (Liquid pumped, ORC2s and ORC2)
         P_ORC2 = P_ORC1 + ORC_Pump # Pa
@@ -468,22 +472,22 @@ class WHRS():
         H_ORC2s = w_spec_pump_ORC_ideal + H_ORC1 # Enthalpy at state 2s of ORC, kJ/kg
         H_ORC2 = ((H_ORC2s - H_ORC1)/ORC_Pump_eff) + H_ORC1 # Enthalpy at state 2 of ORC, kJ/kg
         H_ORC2_joules = H_ORC2 * 1000 # Enthalpy in J/kg for the correct calculation of T_ORC2 and S_ORC2
-        T_ORC2 = self._py_CoolProp_CoolProp_PropsSI('T','P',P_ORC2,'H',H_ORC2_joules,"Cyclohexane") # Temperature of the jacket water at the outlet of the pump, K
-        S_ORC2 = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC2,'H',H_ORC2_joules,"Cyclohexane")/1000 # Entropy of the jacket water at the outlet of the pump, kJ/kg·K
-        T_evap_ORC = self._py_CoolProp_CoolProp_PropsSI('T','P',P_ORC2,'Q',0,"Cyclohexane") # Vaporization temperature of ORC fluid, K
+        T_ORC2 = self._py_CoolProp_CoolProp_PropsSI('T','P',P_ORC2,'H',H_ORC2_joules,fluid) # Temperature of the jacket water at the outlet of the pump, K
+        S_ORC2 = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC2,'H',H_ORC2_joules,fluid)/1000 # Entropy of the jacket water at the outlet of the pump, kJ/kg·K
+        T_evap_ORC = self._py_CoolProp_CoolProp_PropsSI('T','P',P_ORC2,'Q',0,fluid) # Vaporization temperature of ORC fluid, K
         T_ORC3 = T_evap_ORC + ORC_Superheat # Temperature of ORC fluid at the outlet of evaporator, K
-        T_crit = self._py_CoolProp_CoolProp_PropsSI('Tcrit',"Cyclohexane") # Critical temperature of the ORC fluid
+        T_crit = self._py_CoolProp_CoolProp_PropsSI('Tcrit',fluid) # Critical temperature of the ORC fluid
         if (T_crit < T_ORC3):
             self._warndlg ({'Organic Rankine Cycle is on Supercritical state.'},'Warning')
         
         P_ORC3 = P_ORC2 - 10000 # Drop of pressure inside ORC evaporator, Pa
-        H_ORC3 = self._py_CoolProp_CoolProp_PropsSI('H','T',T_ORC3,'P',P_ORC3,"Cyclohexane")/1000 # kJ/kg
+        H_ORC3 = self._py_CoolProp_CoolProp_PropsSI('H','T',T_ORC3,'P',P_ORC3,fluid)/1000 # kJ/kg
         m_ORC = Q_evap_jw_ORC / ((Cp_ORC * (T_evap_ORC - T_ORC2)) + (H_ORC3 - H_ORC2) + (Cp_ORC * ORC_Superheat)) # Mass flow of ORC fluid inside the circuit, kg/s
         W_pump_ideal_ORC = (m_ORC * w_spec_pump_ORC_ideal) # Work ideally needed by the ORC pump, kJ/s EQ 28 - DOC 3
         W_pump_real_ORC = W_pump_ideal_ORC / ORC_Pump_eff # Work introduced on the ORC pump, kJ/s EQ 28 - DOC 3
         I_pump_ORC = m_ORC * T_env * (S_ORC2 - S_ORC1) # Irreversibilities on the ORC pumping process, kJ/s EQ 29 - DOC 3
         # ORC Evaporator (Counterflow JW / ORC fluid, ORC3)
-        S_ORC3 = self._py_CoolProp_CoolProp_PropsSI('S','T',T_ORC3,'P',P_ORC3,"Cyclohexane")/1000 # kJ/kg·K
+        S_ORC3 = self._py_CoolProp_CoolProp_PropsSI('S','T',T_ORC3,'P',P_ORC3,fluid)/1000 # kJ/kg·K
         T_avg_ORC = (T_evap_jw_ORC_in - T_evap_jw_ORC_out) / math.log (T_evap_jw_ORC_in / T_evap_jw_ORC_out) # Exhaust average temperature inside the evaporator, K
         I_evap_jw_ORC = Q_evap_jw_ORC * (1 - (T_env / T_avg_ORC)) # Irreversibilities of the jacket water on ORC evaporator, kJ/s EQ 31 - DOC 3
         I_evap_ORC = m_ORC * (H_ORC3 - H_ORC2 - (T_env * (S_ORC3 - S_ORC2))) # Irreversibilities of the ORC fluid on ORC evaporator, kJ/s EQ 32 - DOC 3
@@ -493,25 +497,25 @@ class WHRS():
         Gen_eff_ORC = 0.96 # ORC Generator efficiency - OPERATIONAL CONDITION
         P_ORC4 = P_ORC1 + 10000 # Loss of pressure in condenser, Pa - OPERATIONAL CONDITION
         S_ORC4s = S_ORC3 # Isentropic process, kJ/kg·K
-        S_P4_f_ORC = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC4,'Q',0,"Cyclohexane")/1000 # kJ/kg·K
-        S_P4_g_ORC = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC4,'Q',1,"Cyclohexane")/1000 # kJ/kg·K
+        S_P4_f_ORC = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC4,'Q',0,fluid)/1000 # kJ/kg·K
+        S_P4_g_ORC = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC4,'Q',1,fluid)/1000 # kJ/kg·K
         X_ORC4s = (S_ORC4s - S_P4_f_ORC) / (S_P4_g_ORC - S_P4_f_ORC) # Steam quality at state 4s
         S_ORC4s_joules = S_ORC3 * 1000 # Entropy in J/kg·K for calculations
-        H_P4_f_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',0,"Cyclohexane")/1000 # kJ/kg
-        H_P4_g_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',1,"Cyclohexane")/1000 # kJ/kg
+        H_P4_f_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',0,fluid)/1000 # kJ/kg
+        H_P4_g_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',1,fluid)/1000 # kJ/kg
         H_ORC4s = H_P4_f_ORC + (X_ORC4s * (H_P4_g_ORC - H_P4_f_ORC)) # kJ/kg
         W_turbine_ideal_ORC = (m_ORC * (H_ORC3 - H_ORC4s)) # Ideal work delivered by ORC turbine, kJ/s
         H_ORC4 = H_ORC3 + (Turb_eff_ORC * (H_ORC4s - H_ORC3))/1000 # kJ/kg
         H_ORC4_joules = H_ORC4 * 1000 # Enthalpy in J/kg for calculations
-        T_ORC4 = self._py_CoolProp_CoolProp_PropsSI('T','P',P_ORC4,'H',H_ORC4_joules,"Cyclohexane") # K
-        S_ORC4 = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC4,'H',H_ORC4_joules,"Cyclohexane")/1000 # kJ/kg·K
+        T_ORC4 = self._py_CoolProp_CoolProp_PropsSI('T','P',P_ORC4,'H',H_ORC4_joules,fluid) # K
+        S_ORC4 = self._py_CoolProp_CoolProp_PropsSI('S','P',P_ORC4,'H',H_ORC4_joules,fluid)/1000 # kJ/kg·K
         X_ORC4 = (S_ORC4 - S_P4_f_ORC) / (S_P4_g_ORC - S_P4_f_ORC) # Steam quality at state 4
         W_turbine_real_ORC = W_turbine_ideal_ORC * Turb_eff_ORC # Real work delivered by the ORC turbine, kJ/s EQ 34 - DOC 3
         Gen_power_ORC = W_turbine_real_ORC * Gen_eff_ORC # Electrical power delivered to the grid by the ORC, kJ/s EQ 34 - DOC 3
         I_turbine_ORC = m_ORC * T_env * (S_ORC4 - S_ORC3) # Irreversibilities on the turbine, kJ/s EQ 35 - DOC 3
         # ORC Condenser (Liquid, ORC1)
-        H_sat_vap_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',1,"Cyclohexane")/1000 # Enthalpy of ORC saturated vapor at P_2c, kJ/kg
-        H_sat_liq_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',0,"Cyclohexane")/1000 # Enthalpy of ORC saturated liquid at P_2c, kJ/kg
+        H_sat_vap_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',1,fluid)/1000 # Enthalpy of ORC saturated vapor at P_2c, kJ/kg
+        H_sat_liq_ORC = self._py_CoolProp_CoolProp_PropsSI('H','P',P_ORC4,'Q',0,fluid)/1000 # Enthalpy of ORC saturated liquid at P_2c, kJ/kg
         Q_cond_ORC = m_ORC * ((Cp_ORC * (T_ORC4 - T_cond_ORC)) + (H_sat_vap_ORC - H_sat_liq_ORC) + (Cp_ORC * ORC_Subcool)) # Total heat on condenser, kJ/s EQ 36 - DOC 3
         
         # 4. THERMOELECTRIC GENERATORS
