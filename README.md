@@ -1,7 +1,7 @@
 # WHRS
 This software implements a simulation and a optimization of a combined waste heat recovery system (WHRS) composed of four subsystems as is described in the article:</p>
 
-_Díaz-Secades, Luis Alfonso; González, R; Rivera, N; Montañés, Elena; Quevedo, José Ramón. A novel waste heat recovery system for a medium speed marine engine optimized through a preference learning rank function embedded into a bayesian optimizer. Ocean Engineering. (Under Review)_
+_Díaz-Secades, L. A., González, R., Rivera, N., Montañés, E., & Quevedo, J. R. (2023). Waste heat recovery system for marine engines optimized through a preference learning rank function embedded into a Bayesian optimizer. Ocean Engineering, 281, 114747._
 
 There are two implementations of the WHRS simulator used for different goals.
 
